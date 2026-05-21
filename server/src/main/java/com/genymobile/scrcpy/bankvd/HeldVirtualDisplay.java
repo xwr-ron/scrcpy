@@ -127,16 +127,42 @@ final class HeldVirtualDisplay implements AutoCloseable {
         imageDrainThread.quitSafely();
     }
 
+	// region Flags
+    private static final int VIRTUAL_DISPLAY_FLAG_PUBLIC = 1;
+    private static final int VIRTUAL_DISPLAY_FLAG_PRESENTATION = 1 << 1;
+    private static final int VIRTUAL_DISPLAY_FLAG_SECURE = 1 << 2;
+    private static final int VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY = 1 << 3;
+    private static final int VIRTUAL_DISPLAY_FLAG_CAN_SHOW_WITH_INSECURE_KEYGUARD = 1 << 5;
+    private static final int VIRTUAL_DISPLAY_FLAG_SUPPORTS_TOUCH = 1 << 6;
+    private static final int VIRTUAL_DISPLAY_FLAG_DESTROY_CONTENT_ON_REMOVAL = 1 << 8;
+    private static final int VIRTUAL_DISPLAY_FLAG_SHOULD_SHOW_SYSTEM_DECORATIONS = 1 << 9;
+    private static final int VIRTUAL_DISPLAY_FLAG_TRUSTED = 1 << 10;
+    private static final int VIRTUAL_DISPLAY_FLAG_OWN_DISPLAY_GROUP = 1 << 11;
+    private static final int VIRTUAL_DISPLAY_FLAG_ALWAYS_UNLOCKED = 1 << 12;
+
+
     private static int buildVirtualDisplayFlags(boolean systemDecorations) {
         int flags = 0;
 
-        flags |= reflectDisplayManagerFlag("VIRTUAL_DISPLAY_FLAG_PUBLIC");
-        flags |= reflectDisplayManagerFlag("VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY");
-        flags |= reflectDisplayManagerFlag("VIRTUAL_DISPLAY_FLAG_PRESENTATION");
-        flags |= reflectDisplayManagerFlag("VIRTUAL_DISPLAY_FLAG_SUPPORTS_TOUCH");
+        flags |= VIRTUAL_DISPLAY_FLAG_PUBLIC;
+        flags |= VIRTUAL_DISPLAY_FLAG_PRESENTATION;
+        flags |= VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY;
+        flags |= VIRTUAL_DISPLAY_FLAG_SUPPORTS_TOUCH;
+        flags |= VIRTUAL_DISPLAY_FLAG_DESTROY_CONTENT_ON_REMOVAL;
+
+        // BankVD must run on a hidden secondary display while the physical
+        // device can stay locked/off. Without these flags, some Android/OEM
+        // builds attach the keyguard surface to the virtual display too.
+		//
+		// Helps on some OEM builds where secondary displays still get
+		// keyguard-related surfaces while the physical device is locked.
+        flags |= VIRTUAL_DISPLAY_FLAG_TRUSTED;
+        flags |= VIRTUAL_DISPLAY_FLAG_OWN_DISPLAY_GROUP;
+        flags |= VIRTUAL_DISPLAY_FLAG_ALWAYS_UNLOCKED;
+        flags |= VIRTUAL_DISPLAY_FLAG_CAN_SHOW_WITH_INSECURE_KEYGUARD;
 
         if (systemDecorations) {
-            flags |= reflectDisplayManagerFlag("VIRTUAL_DISPLAY_FLAG_SHOULD_SHOW_SYSTEM_DECORATIONS");
+            flags |= VIRTUAL_DISPLAY_FLAG_SHOULD_SHOW_SYSTEM_DECORATIONS;
         }
 
         return flags;
