@@ -20,7 +20,12 @@ public final class BankVdServer {
         try {
             run(BankVdOptions.parse(args));
         } catch (Throwable t) {
-            JsonLog.event("fatal", "error", t.toString());
+            JsonLog.event(
+                    "fatal",
+                    "error", t.toString(),
+                    "stack", JsonLog.stackTrace(t)
+            );
+
             status = 1;
         } finally {
             System.exit(status);

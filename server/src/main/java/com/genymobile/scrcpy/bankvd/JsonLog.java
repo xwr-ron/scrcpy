@@ -3,6 +3,8 @@ package com.genymobile.scrcpy.bankvd;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 
 final class JsonLog {
@@ -32,6 +34,27 @@ final class JsonLog {
             out.write(build(event, kv).getBytes(StandardCharsets.UTF_8));
             out.write('\n');
         }
+    }
+
+
+    static String stackTrace(Throwable t) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+
+        t.printStackTrace(pw);
+
+        Throwable cause = t.getCause();
+
+        while (cause != null) {
+            pw.println();
+            pw.println("Caused by:");
+            cause.printStackTrace(pw);
+            cause = cause.getCause();
+        }
+
+        pw.flush();
+
+        return sw.toString();
     }
 
     static String build(String event, String... kv) {

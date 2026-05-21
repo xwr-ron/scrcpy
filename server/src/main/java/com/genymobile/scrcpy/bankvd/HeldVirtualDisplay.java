@@ -24,10 +24,24 @@ final class HeldVirtualDisplay implements AutoCloseable {
     }
 
     static HeldVirtualDisplay create(String name, int width, int height, int dpi, boolean systemDecorations) throws Exception {
+        JsonLog.event(
+                "vd_create_begin",
+                "name", name,
+                "width", String.valueOf(width),
+                "height", String.valueOf(height),
+                "dpi", String.valueOf(dpi),
+                "systemDecorations", String.valueOf(systemDecorations)
+        );
+
         HandlerThread thread = new HandlerThread("bank-vd-image-drain");
         thread.start();
 
+        JsonLog.event("vd_image_thread_started");
+
         ImageReader reader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 3);
+
+        JsonLog.event("vd_image_reader_created");
+
         Handler handler = new Handler(thread.getLooper());
 
         reader.setOnImageAvailableListener(ir -> {
@@ -47,8 +61,29 @@ final class HeldVirtualDisplay implements AutoCloseable {
         Surface surface = reader.getSurface();
         int flags = buildVirtualDisplayFlags(systemDecorations);
 
-        VirtualDisplay vd = ServiceManager.getDisplayManager()
-                .createNewVirtualDisplay(name, width, height, dpi, surface, flags);
+        JsonLog.event(
+                "vd_create_call",
+                "flags", String.valueOf(flags)
+        );
+
+        VirtualDisplay vd;
+
+        try {
+            vd = ServiceManager.getDisplayManager()
+                    .createNewVirtualDisplay(name, width, height, dpi, surface, flags);
+        } catch (Throwable t) {
+            JsonLog.event(
+                    "vd_create_failed",
+                    "error", t.toString(),
+                    "stack", JsonLog.stackTrace(t)
+            );
+
+            surface.release();
+            reader.close();
+            thread.quitSafely();
+
+            throw t;
+        }
 
         if (vd == null || vd.getDisplay() == null) {
             surface.release();
@@ -56,6 +91,11 @@ final class HeldVirtualDisplay implements AutoCloseable {
             thread.quitSafely();
             throw new IllegalStateException("Could not create virtual display");
         }
+
+        JsonLog.event(
+                "vd_create_success",
+                "displayId", String.valueOf(vd.getDisplay().getDisplayId())
+        );
 
         return new HeldVirtualDisplay(reader, surface, thread, vd);
     }
