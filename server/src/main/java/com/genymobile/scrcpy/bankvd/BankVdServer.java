@@ -1,5 +1,7 @@
 package com.genymobile.scrcpy.bankvd;
 
+import android.os.Looper;
+
 import com.genymobile.scrcpy.AndroidVersions;
 import com.genymobile.scrcpy.device.Device;
 import com.genymobile.scrcpy.wrappers.ServiceManager;
@@ -15,6 +17,8 @@ public final class BankVdServer {
     }
 
     public static void main(String[] args) {
+        prepareLooperIfNeeded();
+
         int status = 0;
 
         try {
@@ -126,4 +130,15 @@ public final class BankVdServer {
             return "0";
         }
     }
+
+    private static void prepareLooperIfNeeded() {
+        if (Looper.myLooper() != null) {
+            return;
+        }
+
+        Looper.prepare();
+
+        JsonLog.event("looper_prepared", "thread", Thread.currentThread().getName());
+    }
+
 }
